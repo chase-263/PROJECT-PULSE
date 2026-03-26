@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Submit Project — {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+
+  <div class="breadcrumb" style="margin-bottom:20px;">
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <span>›</span>
+    <a href="{{ url_for('group_detail', group_id=group.id) }}">{{ group.name }}</a>
+    <span>›</span> Submit Project
+  </div>
+
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1>📤 Submit Project</h1>
+      <p>Submit your completed project for <strong style="color:var(--text);">{{ group.name }}</strong></p>
+    </div>
+    <div class="page-header-actions">
+      <a href="{{ url_for('group_detail', group_id=group.id) }}" class="btn btn-secondary">← Back</a>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:28px;align-items:start;">
+
+    <!-- Submission Form -->
+    <div class="card">
+      <form method="POST" action="{{ url_for('submit_project', group_id=group.id) }}"
+            enctype="multipart/form-data">
+
+        <div class="form-group">
+          <label class="form-label">Project Title *</label>
+          <input class="form-control" type="text" name="title"
+                 placeholder="e.g. Final Year Project — Inventory System" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" name="description" rows="4"
+                    placeholder="Briefly describe what your project does, technologies used, and any notes for the teacher…"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Upload File</label>
+          <div style="background:var(--surface2);border:2px dashed var(--border);
+                      border-radius:var(--radius);padding:24px;text-align:center;
+                      cursor:pointer;transition:border-color .15s;"
+               onclick="document.getElementById('file-input').click()"
+               id="drop-zone">
+            <div style="font-size:2rem;margin-bottom:8px;">📁</div>
+            <div style="font-size:.88rem;font-weight:600;color:var(--text);margin-bottom:4px;">
+              Click to upload file
+            </div>
+            <div style="font-size:.75rem;color:var(--text3);">
+              PDF, DOCX, ZIP, PY, TXT, PNG, JPG — max 16MB
+            </div>
+            <div id="file-name" style="margin-top:10px;font-size:.8rem;
+                                        color:var(--accent);display:none;"></div>
+          </div>
+          <input type="file" id="file-input" name="file" style="display:none;"
+                 accept=".pdf,.doc,.docx,.zip,.py,.txt,.png,.jpg,.jpeg"
+                 onchange="showFileName(this)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Paste Code (optional)</label>
+          <textarea class="form-control" name="code_text" rows="10"
+                    style="font-family:var(--mono);font-size:.85rem;line-height:1.7;"
+                    placeholder="Paste your main code here for the teacher to review directly…"></textarea>
+          <div class="form-hint">The teacher can view this code directly without downloading anything.</div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <a href="{{ url_for('group_detail', group_id=group.id) }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-gradient">📤 Submit Project →</button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Sidebar Info -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- Group Info -->
+      <div class="card card-sm">
+        <div class="sidebar-title">Submitting For</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div class="avatar" style="border-radius:10px;">
+            {{ group.name[0].upper() }}
+          </div>
+          <div>
+            <div style="font-weight:700;color:var(--text);">{{ group.name }}</div>
+            <div style="font-size:.72rem;font-family:var(--mono);color:var(--accent);">{{ group.code }}</div>
+          </div>
+        </div>
+        <div style="font-size:.8rem;color:var(--text3);">
+          {{ group.members|length }} members · {{ group.tasks|length }} tasks
+        </div>
+      </div>
+
+      <!-- Task Summary -->
+      <div class="card card-sm">
+        <div class="sidebar-title">Task Completion</div>
+        {% set total = group.tasks|length %}
+        {% set done  = namespace(n=0) %}
+        {% for t in group.tasks %}
+          {% if t.status == 'Completed' %}{% set done.n = done.n + 1 %}{% endif %}
+        {% endfor %}
+        {% set pct = ((done.n / total * 100)|int) if total > 0 else 0 %}
+
+        <div style="display:flex;justify-content:space-between;
+                    font-size:.78rem;color:var(--text3);margin-bottom:8px;">
+          <span>{{ done.n }} of {{ total }} tasks done</span>
+          <span style="color:var(--green);font-weight:600;">{{ pct }}%</span>
+        </div>
+        <div class="progress-bar-wrap" style="height:8px;margin-bottom:12px;">
+          <div class="progress-bar-fill" style="width:{{ pct }}%;"></div>
+        </div>
+
+        {% if pct < 100 %}
+          <div style="background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.25);
+                      border-radius:var(--radius);padding:10px;font-size:.78rem;color:var(--gold);">
+            ⚠️ Not all tasks are completed yet. You can still submit but consider finishing remaining tasks first.
+          </div>
+        {% else %}
+          <div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);
+                      border-radius:var(--radius);padding:10px;font-size:.78rem;color:var(--green);">
+            ✅ All tasks completed! Your group is ready to submit.
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Tips -->
+      <div class="card card-sm">
+        <div class="sidebar-title">Submission Tips</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;gap:8px;font-size:.8rem;color:var(--text2);">
+            <span>📄</span>
+            <span>Upload a ZIP file to include multiple files at once</span>
+          </div>
+          <div style="display:flex;gap:8px;font-size:.8rem;color:var(--text2);">
+            <span>💻</span>
+            <span>Paste your main code so the teacher can review it without downloading</span>
+          </div>
+          <div style="display:flex;gap:8px;font-size:.8rem;color:var(--text2);">
+            <span>📝</span>
+            <span>Add a clear description explaining your project and what it does</span>
+          </div>
+          <div style="display:flex;gap:8px;font-size:.8rem;color:var(--text2);">
+            <span>✅</span>
+            <span>Complete all tasks before submitting for the best results</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function showFileName(input) {
+  const nameEl   = document.getElementById('file-name');
+  const dropZone = document.getElementById('drop-zone');
+  if (input.files && input.files[0]) {
+    nameEl.textContent  = '✓ ' + input.files[0].name;
+    nameEl.style.display = 'block';
+    dropZone.style.borderColor = 'var(--accent)';
+  }
+}
+</script>
+{% endblock %}

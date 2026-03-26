@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Meeting — {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+
+  <div class="breadcrumb" style="margin-bottom:20px;">
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <span>›</span>
+    <a href="{{ url_for('group_detail', group_id=group.id) }}">{{ group.name }}</a>
+    <span>›</span> Meeting
+  </div>
+
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1>🎥 Meeting Room</h1>
+      <p>{{ group.name }} — online meeting space</p>
+    </div>
+    <div class="page-header-actions">
+      <a href="{{ url_for('chat', group_id=group.id) }}" class="btn btn-secondary">💬 Chat</a>
+      <a href="{{ url_for('group_detail', group_id=group.id) }}" class="btn btn-secondary">← Back</a>
+    </div>
+  </div>
+
+  <!-- Meeting Options -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;">
+
+    <!-- Jitsi Card -->
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="width:44px;height:44px;border-radius:12px;
+                    background:linear-gradient(135deg,#4f8ef7,#a855f7);
+                    display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🎥</div>
+        <div>
+          <div style="font-weight:700;color:var(--text);">Jitsi Meet</div>
+          <div style="font-size:.78rem;color:var(--text3);">Free — no account needed</div>
+        </div>
+      </div>
+      <p style="font-size:.85rem;margin-bottom:16px;">
+        Start an instant video call directly in your browser. No downloads, no sign-up required.
+      </p>
+      <button onclick="loadJitsi()" class="btn btn-gradient btn-full">
+        🚀 Start Jitsi Call
+      </button>
+    </div>
+
+    <!-- External Link Card -->
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="width:44px;height:44px;border-radius:12px;
+                    background:linear-gradient(135deg,#22c55e,#16a34a);
+                    display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🔗</div>
+        <div>
+          <div style="font-weight:700;color:var(--text);">External Meeting</div>
+          <div style="font-size:.78rem;color:var(--text3);">Zoom, Google Meet, Teams</div>
+        </div>
+      </div>
+      {% if group.meeting_link %}
+        <p style="font-size:.85rem;margin-bottom:16px;">
+          Your leader has set a meeting link for this group.
+        </p>
+        <a href="{{ group.meeting_link }}" target="_blank" class="btn btn-full"
+           style="background:var(--green);color:#fff;border:none;
+                  display:flex;align-items:center;justify-content:center;gap:8px;">
+          🔗 Join External Meeting
+        </a>
+      {% else %}
+        <p style="font-size:.85rem;color:var(--text3);margin-bottom:16px;">
+          No external meeting link set yet. The group leader can add one from the group page.
+        </p>
+        <a href="{{ url_for('group_detail', group_id=group.id) }}"
+           class="btn btn-secondary btn-full">
+          Go to Group Page
+        </a>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Jitsi Embed Container -->
+  <div id="jitsi-container" style="display:none;">
+    <div class="meeting-wrap">
+      <div class="meeting-header">
+        <div>
+          <div style="font-weight:700;color:var(--text);">🎥 Live Meeting — {{ group.name }}</div>
+          <div style="font-size:.78rem;color:var(--text3);">Powered by Jitsi Meet (free &amp; secure)</div>
+        </div>
+        <button onclick="stopJitsi()" class="btn btn-danger">✕ End Call</button>
+      </div>
+      <div id="jitsi-frame" style="height:600px;"></div>
+    </div>
+  </div>
+
+  <!-- Meeting Tips -->
+  <div class="card" style="margin-top:28px;">
+    <div style="font-weight:700;color:var(--text);margin-bottom:16px;">💡 Meeting Tips</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
+      <div style="padding:14px;background:var(--surface2);border-radius:var(--radius);
+                  border:1px solid var(--border);">
+        <div style="font-size:1.2rem;margin-bottom:6px;">🎤</div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:3px;">Mute when not talking</div>
+        <div style="font-size:.75rem;color:var(--text3);">Reduces background noise for everyone</div>
+      </div>
+      <div style="padding:14px;background:var(--surface2);border-radius:var(--radius);
+                  border:1px solid var(--border);">
+        <div style="font-size:1.2rem;margin-bottom:6px;">📋</div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:3px;">Use the group chat</div>
+        <div style="font-size:.75rem;color:var(--text3);">Share links and files during the call</div>
+      </div>
+      <div style="padding:14px;background:var(--surface2);border-radius:var(--radius);
+                  border:1px solid var(--border);">
+        <div style="font-size:1.2rem;margin-bottom:6px;">👑</div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:3px;">Leader leads the call</div>
+        <div style="font-size:.75rem;color:var(--text3);">Keep meetings focused and on time</div>
+      </div>
+      <div style="padding:14px;background:var(--surface2);border-radius:var(--radius);
+                  border:1px solid var(--border);">
+        <div style="font-size:1.2rem;margin-bottom:6px;">📝</div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:3px;">Take notes</div>
+        <div style="font-size:.75rem;color:var(--text3);">Create tasks after the meeting</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let api = null;
+  const roomName = 'ProjectPulse-{{ group.name|replace(" ", "-") }}-{{ group.code }}';
+
+  function loadJitsi() {
+    document.getElementById('jitsi-container').style.display = 'block';
+    document.getElementById('jitsi-container').scrollIntoView({ behavior: 'smooth' });
+
+    if (typeof JitsiMeetExternalAPI !== 'undefined') {
+      startJitsi();
+      return;
+    }
+
+    var script = document.createElement('script');
+    script.src = 'https://meet.jit.si/external_api.js';
+    script.onload = function() {
+      startJitsi();
+    };
+    script.onerror = function() {
+      document.getElementById('jitsi-frame').innerHTML =
+        '<div style="padding:60px;text-align:center;color:var(--text3);">' +
+        '<div style="font-size:2.5rem;margin-bottom:16px;">⚠️</div>' +
+        '<div style="font-size:.95rem;margin-bottom:12px;color:var(--text);">Could not load Jitsi Meet</div>' +
+        '<div style="font-size:.82rem;">Check your internet connection or use the external meeting link instead.</div>' +
+        '</div>';
+    };
+    document.head.appendChild(script);
+  }
+
+  function startJitsi() {
+    if (api) return;
+    const domain  = 'meet.jit.si';
+    const options = {
+      roomName: roomName,
+      width: '100%',
+      height: 600,
+      parentNode: document.getElementById('jitsi-frame'),
+      userInfo: {
+        displayName: '{{ user.username }}'
+      },
+      configOverwrite: {
+        startWithAudioMuted: true,
+        startWithVideoMuted: false,
+        prejoinPageEnabled: false,
+      },
+      interfaceConfigOverwrite: {
+        SHOW_JITSI_WATERMARK: false,
+        SHOW_WATERMARK_FOR_GUESTS: false,
+        TOOLBAR_BUTTONS: [
+          'microphone', 'camera', 'desktop', 'chat',
+          'raisehand', 'tileview', 'hangup'
+        ],
+      }
+    };
+    api = new JitsiMeetExternalAPI(domain, options);
+  }
+
+  function stopJitsi() {
+    if (api) { api.dispose(); api = null; }
+    document.getElementById('jitsi-container').style.display = 'none';
+    document.getElementById('jitsi-frame').innerHTML = '';
+  }
+</script>
+
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — ProjectPulse{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="breadcrumb">Welcome back 👋</div>
+      <h1>Your Groups</h1>
+      <p>Manage your university project groups</p>
+    </div>
+    <div class="page-header-actions">
+      <a href="{{ url_for('join_group') }}" class="btn btn-secondary">Join Group</a>
+      <a href="{{ url_for('create_group') }}" class="btn btn-gradient">+ Create Group</a>
+    </div>
+  </div>
+
+  {% set total_tasks = namespace(n=0) %}
+  {% set done_tasks = namespace(n=0) %}
+  {% for g in groups %}
+    {% set total_tasks.n = total_tasks.n + g.tasks|length %}
+    {% for t in g.tasks %}
+      {% if t.status == 'Completed' %}
+        {% set done_tasks.n = done_tasks.n + 1 %}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+
+  <div class="stats-row" style="margin-bottom:36px;">
+    <div class="stat-card blue">
+      <div class="stat-card-num">{{ groups|length }}</div>
+      <div class="stat-card-label">Groups Joined</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-card-num">{{ total_tasks.n }}</div>
+      <div class="stat-card-label">Total Tasks</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-card-num">{{ done_tasks.n }}</div>
+      <div class="stat-card-label">Completed</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-card-num">
+        {% if total_tasks.n > 0 %}{{ ((done_tasks.n / total_tasks.n) * 100)|int }}%{% else %}0%{% endif %}
+      </div>
+      <div class="stat-card-label">Progress</div>
+    </div>
+  </div>
+
+  {% if groups %}
+    <div class="groups-grid">
+      {% for group in groups %}
+        {% set completed = namespace(n=0) %}
+        {% for t in group.tasks %}
+          {% if t.status == 'Completed' %}
+            {% set completed.n = completed.n + 1 %}
+          {% endif %}
+        {% endfor %}
+        {% set pct = ((completed.n / group.tasks|length * 100)|int) if group.tasks|length > 0 else 0 %}
+
+        <div class="group-card">
+          <div class="group-card-header">
+            <div class="group-card-name">{{ group.name }}</div>
+            <div class="group-card-code">{{ group.code }}</div>
+          </div>
+
+          <div class="group-card-meta">
+            {% if group.department %}
+              <span class="badge badge-purple" style="margin-bottom:8px;">{{ group.department }}</span><br>
+            {% endif %}
+            Created by
+            {% if group.creator_id == user.id %}you{% else %}{{ group.creator.username }}{% endif %}
+            {% if group.leader %}
+              · Leader: <strong style="color:var(--gold);">{{ group.leader.username }}</strong>
+            {% endif %}
+          </div>
+
+          <div class="group-card-stats">
+            <div class="group-stat">
+              <div class="group-stat-num">{{ group.members|length }}</div>
+              <div class="group-stat-label">Members</div>
+            </div>
+            <div class="group-stat">
+              <div class="group-stat-num">{{ group.tasks|length }}</div>
+              <div class="group-stat-label">Tasks</div>
+            </div>
+            <div class="group-stat">
+              <div class="group-stat-num" style="color:var(--green);">{{ completed.n }}</div>
+              <div class="group-stat-label">Done</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:18px;">
+            <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text3);margin-bottom:6px;">
+              <span>Progress</span><span>{{ pct }}%</span>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" style="width:{{ pct }}%;"></div>
+            </div>
+          </div>
+
+          <div class="group-card-footer">
+            <div style="display:flex;gap:8px;">
+              <a href="{{ url_for('chat', group_id=group.id) }}" class="btn btn-ghost btn-sm">💬 Chat</a>
+              <a href="{{ url_for('meeting', group_id=group.id) }}" class="btn btn-ghost btn-sm">🎥 Meet</a>
+            </div>
+            <a href="{{ url_for('group_detail', group_id=group.id) }}" class="btn btn-primary btn-sm">Open →</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📂</div>
+      <h3>No groups yet</h3>
+      <p>Create a new group or join one with a code from your teammates.</p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <a href="{{ url_for('join_group') }}" class="btn btn-secondary">Join with Code</a>
+        <a href="{{ url_for('create_group') }}" class="btn btn-gradient">+ Create Group</a>
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

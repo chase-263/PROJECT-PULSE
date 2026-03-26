@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}Attendance — ProjectPulse{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+
+  <div class="breadcrumb" style="margin-bottom:20px;">
+    <a href="{{ url_for('teacher_dashboard') }}">Dashboard</a>
+    <span>›</span> Attendance
+  </div>
+
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1>📅 Attendance</h1>
+      <p>Mark and monitor student attendance per group</p>
+    </div>
+    <div class="page-header-actions">
+      <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">← Back</a>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;">
+
+    <!-- Mark Attendance Form -->
+    <div class="card">
+      <div style="font-weight:700;color:var(--text);font-size:1rem;margin-bottom:20px;">
+        ✏️ Mark Attendance
+      </div>
+
+      <form method="POST" action="{{ url_for('attendance') }}" id="att-form">
+        <div class="form-group">
+          <label class="form-label">Select Group</label>
+          <select class="form-control" name="group_id" id="group-select"
+                  onchange="loadMembers(this.value)">
+            <option value="">— Choose a group —</option>
+            {% for group in groups %}
+              <option value="{{ group.id }}"
+                {% if selected_group and selected_group.id == group.id %}selected{% endif %}>
+                {{ group.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-control" type="date" name="date"
+                 value="{{ today if today else '' }}"
+                 max="{{ today if today else '' }}">
+        </div>
+
+        {% if selected_group %}
+          <div style="margin-bottom:20px;">
+            <div class="sidebar-title" style="margin-bottom:12px;">Members</div>
+            {% for member in selected_group.members %}
+              <div style="display:flex;align-items:center;justify-content:space-between;
+                          padding:10px 0;border-bottom:1px solid var(--border);">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div class="avatar" style="width:30px;height:30px;font-size:.72rem;">
+                    {{ member.username[0].upper() }}
+                  </div>
+                  <div>
+                    <div style="font-size:.88rem;font-weight:600;color:var(--text);">
+                      {{ member.username }}
+                    </div>
+                    <div style="font-size:.72rem;color:var(--text3);">
+                      {{ member.department or 'No department' }}
+                    </div>
+                  </div>
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                  <span style="font-size:.8rem;color:var(--text2);">Present</span>
+                  <div class="toggle-wrap">
+                    <input type="checkbox" name="present_{{ member.id }}"
+                           id="present_{{ member.id }}" checked
+                           style="display:none;"
+                           onchange="updateToggle(this)">
+                    <label for="present_{{ member.id }}"
+                           style="display:block;width:40px;height:22px;border-radius:11px;
+                                  background:var(--green);cursor:pointer;position:relative;
+                                  transition:background .2s;" id="toggle_{{ member.id }}">
+                      <span style="position:absolute;top:3px;left:3px;width:16px;height:16px;
+                                   border-radius:50%;background:#fff;transition:left .2s;
+                                   display:block;" id="knob_{{ member.id }}"></span>
+                    </label>
+                  </div>
+                </label>
+              </div>
+            {% endfor %}
+          </div>
+
+          <button type="submit" class="btn btn-gradient btn-full">
+            Save Attendance
+          </button>
+        {% else %}
+          <div style="text-align:center;padding:32px 0;color:var(--text3);">
+            <div style="font-size:2rem;margin-bottom:8px;">📋</div>
+            <div style="font-size:.85rem;">Select a group to mark attendance</div>
+          </div>
+        {% endif %}
+      </form>
+    </div>
+
+    <!-- Attendance Records -->
+    <div>
+      <div class="card">
+        <div style="font-weight:700;color:var(--text);font-size:1rem;margin-bottom:20px;">
+          📊 Attendance Records
+        </div>
+
+        {% if not selected_group %}
+          <!-- Group picker for viewing records -->
+          <form method="GET" action="{{ url_for('attendance') }}">
+            <div class="form-group">
+              <label class="form-label">View Records For</label>
+              <select class="form-control" name="group_id" onchange="this.form.submit()">
+                <option value="">— Choose a group —</option>
+                {% for group in groups %}
+                  <option value="{{ group.id }}">{{ group.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </form>
+        {% endif %}
+
+        {% if records %}
+          <!-- Summary Stats -->
+          {% set present_count = namespace(n=0) %}
+          {% set absent_count  = namespace(n=0) %}
+          {% for r in records %}
+            {% if r.present %}{% set present_count.n = present_count.n + 1 %}
+            {% else %}{% set absent_count.n = absent_count.n + 1 %}{% endif %}
+          {% endfor %}
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+            <div style="background:var(--surface2);border:1px solid var(--border);
+                        border-radius:var(--radius);padding:14px;text-align:center;">
+              <div style="font-size:1.4rem;font-weight:700;color:var(--text);
+                          font-family:var(--mono);">{{ records|length }}</div>
+              <div style="font-size:.7rem;color:var(--text3);">Records</div>
+            </div>
+            <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);
+                        border-radius:var(--radius);padding:14px;text-align:center;">
+              <div style="font-size:1.4rem;font-weight:700;color:var(--green);
+                          font-family:var(--mono);">{{ present_count.n }}</div>
+              <div style="font-size:.7rem;color:var(--text3);">Present</div>
+            </div>
+            <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);
+                        border-radius:var(--radius);padding:14px;text-align:center;">
+              <div style="font-size:1.4rem;font-weight:700;color:var(--red);
+                          font-family:var(--mono);">{{ absent_count.n }}</div>
+              <div style="font-size:.7rem;color:var(--text3);">Absent</div>
+            </div>
+          </div>
+
+          <!-- Records Table -->
+          <div style="max-height:400px;overflow-y:auto;">
+            <table class="student-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for record in records %}
+                  <tr>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <div class="avatar" style="width:26px;height:26px;font-size:.65rem;">
+                          {{ record.user.username[0].upper() }}
+                        </div>
+                        {{ record.user.username }}
+                      </div>
+                    </td>
+                    <td style="font-family:var(--mono);font-size:.8rem;color:var(--text2);">
+                      {{ record.date.strftime('%d %b %Y') }}
+                    </td>
+                    <td>
+                      {% if record.present %}
+                        <span class="badge badge-green">✓ Present</span>
+                      {% else %}
+                        <span class="badge badge-red">✕ Absent</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        {% elif selected_group %}
+          <div style="text-align:center;padding:32px 0;color:var(--text3);">
+            <div style="font-size:2rem;margin-bottom:8px;">📭</div>
+            <div style="font-size:.85rem;">No records yet for {{ selected_group.name }}</div>
+          </div>
+        {% else %}
+          <div style="text-align:center;padding:32px 0;color:var(--text3);">
+            <div style="font-size:2rem;margin-bottom:8px;">📊</div>
+            <div style="font-size:.85rem;">Select a group to view records</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Set today's date as default
+  const dateInput = document.querySelector('input[type="date"]');
+  if (dateInput && !dateInput.value) {
+    dateInput.value = new Date().toISOString().split('T')[0];
+  }
+  dateInput && (dateInput.max = new Date().toISOString().split('T')[0]);
+
+  function updateToggle(checkbox) {
+    const id = checkbox.id.replace('present_', '');
+    const label = document.getElementById('toggle_' + id);
+    const knob  = document.getElementById('knob_'   + id);
+    if (checkbox.checked) {
+      label.style.background = 'var(--green)';
+      knob.style.left = '3px';
+    } else {
+      label.style.background = 'var(--text3)';
+      knob.style.left = '21px';
+    }
+  }
+</script>
+{% endblock %}

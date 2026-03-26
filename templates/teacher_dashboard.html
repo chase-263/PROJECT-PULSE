@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}Teacher Dashboard — ProjectPulse{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="breadcrumb">Teacher View</div>
+      <h1>Dashboard</h1>
+      <p>Monitor all groups, students and submissions</p>
+    </div>
+    <div class="page-header-actions">
+      <a href="{{ url_for('attendance') }}" class="btn btn-secondary">📅 Attendance</a>
+      <a href="{{ url_for('teacher_submissions') }}" class="btn btn-gradient">📤 Submissions</a>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row" style="margin-bottom:36px;">
+    <div class="stat-card blue">
+      <div class="stat-card-num">{{ students|length }}</div>
+      <div class="stat-card-label">Total Students</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-card-num">{{ groups|length }}</div>
+      <div class="stat-card-label">Total Groups</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-card-num">{{ departments|length }}</div>
+      <div class="stat-card-label">Departments</div>
+    </div>
+    <div class="stat-card purple">
+      {% set total_submissions = namespace(n=0) %}
+      {% for g in groups %}
+        {% set total_submissions.n = total_submissions.n + g.submissions|length %}
+      {% endfor %}
+      <div class="stat-card-num">{{ total_submissions.n }}</div>
+      <div class="stat-card-label">Submissions</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="section-header" style="margin-bottom:16px;">
+    <span class="section-title">Quick Actions</span>
+  </div>
+  <div class="teacher-grid" style="margin-bottom:40px;">
+    <a href="{{ url_for('attendance') }}" style="text-decoration:none;">
+      <div class="teacher-card">
+        <div class="teacher-card-icon">📅</div>
+        <div class="teacher-card-title">Mark Attendance</div>
+        <div class="teacher-card-desc">Record and view attendance per group</div>
+      </div>
+    </a>
+    <a href="{{ url_for('teacher_submissions') }}" style="text-decoration:none;">
+      <div class="teacher-card">
+        <div class="teacher-card-icon">📤</div>
+        <div class="teacher-card-title">View Submissions</div>
+        <div class="teacher-card-desc">Review submitted projects and code</div>
+      </div>
+    </a>
+    <div class="teacher-card" onclick="document.getElementById('groups-section').scrollIntoView({behavior:'smooth'})">
+      <div class="teacher-card-icon">👥</div>
+      <div class="teacher-card-title">Manage Groups</div>
+      <div class="teacher-card-desc">Assign leaders and view group details</div>
+    </div>
+    <div class="teacher-card" onclick="document.getElementById('students-section').scrollIntoView({behavior:'smooth'})">
+      <div class="teacher-card-icon">🎓</div>
+      <div class="teacher-card-title">Student Directory</div>
+      <div class="teacher-card-desc">Browse students by department</div>
+    </div>
+  </div>
+
+  <!-- Groups Section -->
+  <div id="groups-section">
+    <div class="section-header" style="margin-bottom:16px;">
+      <span class="section-title">All Groups</span>
+      <span class="badge badge-blue">{{ groups|length }} total</span>
+    </div>
+
+    {% if groups %}
+      <div class="card" style="padding:0;overflow:hidden;margin-bottom:40px;">
+        <table class="student-table">
+          <thead>
+            <tr>
+              <th>Group Name</th>
+              <th>Department</th>
+              <th>Members</th>
+              <th>Tasks</th>
+              <th>Leader</th>
+              <th>Assign Leader</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for group in groups %}
+              {% set completed = namespace(n=0) %}
+              {% for t in group.tasks %}
+                {% if t.status == 'Completed' %}{% set completed.n = completed.n + 1 %}{% endif %}
+              {% endfor %}
+              <tr>
+                <td>
+                  <div style="font-weight:600;">{{ group.name }}</div>
+                  <div style="font-size:.72rem;font-family:var(--mono);color:var(--accent);">{{ group.code }}</div>
+                </td>
+                <td>
+                  {% if group.department %}
+                    <span class="badge badge-purple">{{ group.department }}</span>
+                  {% else %}
+                    <span style="color:var(--text3);">—</span>
+                  {% endif %}
+                </td>
+                <td>{{ group.members|length }}</td>
+                <td>
+                  <span style="color:var(--green);">{{ completed.n }}</span>
+                  <span style="color:var(--text3);">/{{ group.tasks|length }}</span>
+                </td>
+                <td>
+                  {% if group.leader %}
+                    <span class="badge badge-gold">👑 {{ group.leader.username }}</span>
+                  {% else %}
+                    <span style="color:var(--text3);font-size:.8rem;">Not assigned</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if group.members %}
+                    <form method="POST" action="{{ url_for('assign_leader') }}" style="display:flex;gap:6px;align-items:center;">
+                      <input type="hidden" name="group_id" value="{{ group.id }}">
+                      <select name="user_id" class="status-select" style="font-size:.78rem;">
+                        {% for member in group.members %}
+                          <option value="{{ member.id }}" {% if group.leader_id == member.id %}selected{% endif %}>
+                            {{ member.username }}
+                          </option>
+                        {% endfor %}
+                      </select>
+                      <button type="submit" class="btn btn-gold btn-sm">Set</button>
+                    </form>
+                  {% else %}
+                    <span style="color:var(--text3);font-size:.8rem;">No members</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{{ url_for('group_detail', group_id=group.id) }}" class="btn btn-primary btn-sm">View</a>
+<form method="POST" action="{{ url_for('delete_group', group_id=group.id) }}"
+      onsubmit="return confirm('Delete group {{ group.name }}? This cannot be undone.');"
+      style="display:inline;">
+  <button type="submit" class="btn btn-danger">Delete</button>
+</form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state" style="margin-bottom:40px;">
+        <div class="empty-icon">👥</div>
+        <h3>No groups yet</h3>
+        <p>Groups will appear here once students create them.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Students Section -->
+  <div id="students-section">
+    <div class="section-header" style="margin-bottom:16px;">
+      <span class="section-title">Student Directory</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="badge badge-blue">{{ students|length }} students</span>
+        <!-- Department filter -->
+        <select id="dept-filter" class="status-select" onchange="filterStudents(this.value)">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+            <option value="{{ dept }}">{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    {% if students %}
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="student-table" id="students-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Email</th>
+              <th>Department</th>
+              <th>Groups</th>
+              <th>Role</th>
+              <th>Tasks Done</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for student in students %}
+              {% set done = namespace(n=0) %}
+              {% for g in student.groups %}
+                {% for t in g.tasks %}
+                  {% if t.assigned_to == student.id and t.status == 'Completed' %}
+                    {% set done.n = done.n + 1 %}
+                  {% endif %}
+                {% endfor %}
+              {% endfor %}
+              <tr data-dept="{{ student.department or '' }}">
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="avatar" style="width:30px;height:30px;font-size:.72rem;">
+                      {{ student.username[0].upper() }}
+                    </div>
+                    <div>
+                      <div style="font-weight:600;">{{ student.username }}</div>
+                      {% if student.is_leader %}
+                        <span style="font-size:.68rem;color:var(--gold);">👑 Leader</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </td>
+                <td style="color:var(--text2);">{{ student.email }}</td>
+                <td>
+                  {% if student.department %}
+                    <span class="badge badge-purple">{{ student.department }}</span>
+                  {% else %}
+                    <span style="color:var(--text3);">—</span>
+                  {% endif %}
+                </td>
+                <td>{{ student.groups|length }}</td>
+                <td>
+                  {% if student.is_leader %}
+                    <span class="badge badge-gold">Leader</span>
+                  {% else %}
+                    <span class="badge badge-gray">Member</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span style="color:var(--green);font-weight:600;">{{ done.n }}</span> tasks
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">🎓</div>
+        <h3>No students yet</h3>
+        <p>Students will appear here once they register.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+function filterStudents(dept) {
+  document.querySelectorAll('#students-table tbody tr').forEach(row => {
+    row.style.display = (!dept || row.dataset.dept === dept) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

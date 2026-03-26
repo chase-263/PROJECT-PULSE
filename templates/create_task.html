@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}New Task — {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+  <div style="max-width:620px;margin:0 auto;">
+
+    <div class="breadcrumb" style="margin-bottom:20px;">
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      <span>›</span>
+      <a href="{{ url_for('group_detail', group_id=group.id) }}">{{ group.name }}</a>
+      <span>›</span> New Task
+    </div>
+
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Add Task</h1>
+        <p>Create a new task for <strong style="color:var(--text);">{{ group.name }}</strong></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <form method="POST" action="{{ url_for('create_task', group_id=group.id) }}">
+
+        <div class="form-group">
+          <label class="form-label">Task Title *</label>
+          <input class="form-control" type="text" name="title"
+                 placeholder="e.g. Write introduction section" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" name="description" rows="3"
+                    placeholder="Optional details about this task…"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Assign To</label>
+            <select class="form-control" name="assigned_to">
+              <option value="">— Unassigned —</option>
+              {% for member in group.members %}
+                <option value="{{ member.id }}">
+                  {{ member.username }}{% if member.id == user.id %} (you){% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Initial Status</label>
+            <select class="form-control" name="status">
+              <option value="Not Started">Not Started</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Deadline (optional)</label>
+          <input class="form-control" type="date" name="deadline">
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <a href="{{ url_for('group_detail', group_id=group.id) }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-gradient">Create Task →</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

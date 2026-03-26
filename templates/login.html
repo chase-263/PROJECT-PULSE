@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — ProjectPulse</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+    <div class="flashes" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);width:90%;max-width:460px;z-index:999;">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">PP</div>
+      <div class="auth-logo-text">Project<span>Pulse</span></div>
+    </div>
+    <div class="auth-tagline">University group project management</div>
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input class="form-control" type="text" id="username" name="username"
+               placeholder="your_username" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-control" type="password" id="password" name="password"
+               placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-gradient btn-full" style="margin-top:8px;">
+        Sign In →
+      </button>
+    </form>
+
+    <div class="auth-divider">or</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;">
+        <div style="font-size:1.4rem;margin-bottom:4px;">🎓</div>
+        <div style="font-size:.78rem;color:var(--text2);font-weight:600;">Student</div>
+        <div style="font-size:.7rem;color:var(--text3);">Join groups, submit projects</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;">
+        <div style="font-size:1.4rem;margin-bottom:4px;">📋</div>
+        <div style="font-size:.78rem;color:var(--gold);font-weight:600;">Teacher</div>
+        <div style="font-size:.7rem;color:var(--text3);">Monitor, manage, review</div>
+      </div>
+    </div>
+
+    <div class="auth-footer">
+      No account? <a href="{{ url_for('register') }}">Create one</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

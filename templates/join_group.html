@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Join Group — ProjectPulse{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+  <div style="max-width:480px;margin:0 auto;">
+
+    <div class="breadcrumb" style="margin-bottom:20px;">
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      <span>›</span> Join Group
+    </div>
+
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Join a Group</h1>
+        <p>Enter the invite code shared by your group creator</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <form method="POST" action="{{ url_for('join_group') }}">
+
+        <div class="form-group">
+          <label class="form-label">Group Code</label>
+          <input class="form-control" type="text" name="code"
+                 placeholder="e.g. ABC12345" required maxlength="8"
+                 style="font-family:var(--mono);letter-spacing:.15em;
+                        font-size:1.3rem;text-align:center;text-transform:uppercase;">
+          <div class="form-hint">8-character code — not case sensitive.</div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-gradient">Join Group →</button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Info Card -->
+    <div class="card" style="margin-top:16px;background:var(--surface2);">
+      <div style="display:flex;gap:16px;">
+        <div style="font-size:1.5rem;">🔑</div>
+        <div>
+          <div style="font-weight:600;color:var(--text);margin-bottom:4px;">Where do I get the code?</div>
+          <div style="font-size:.82rem;color:var(--text3);line-height:1.7;">
+            Ask the person who created the group to share the 8-character
+            invite code with you. You can find it on the group page under
+            the <strong style="color:var(--accent);">Invite Code</strong> section.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — ProjectPulse</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+    <div class="flashes" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);width:90%;max-width:460px;z-index:999;">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">PP</div>
+      <div class="auth-logo-text">Project<span>Pulse</span></div>
+    </div>
+    <div class="auth-tagline">Create your account to get started</div>
+
+    <form method="POST" action="{{ url_for('register') }}" id="reg-form">
+
+      <!-- Role Tabs -->
+      <div style="margin-bottom:20px;">
+        <div class="form-label">I am a</div>
+        <div class="role-tabs">
+          <label class="role-tab selected" id="tab-student">
+            <input type="radio" name="role" value="student" checked onchange="switchRole('student')">
+            <div class="role-tab-icon">🎓</div>
+            <div class="role-tab-label">Student</div>
+            <div class="role-tab-sub">Join or create groups</div>
+          </label>
+          <label class="role-tab" id="tab-teacher">
+            <input type="radio" name="role" value="teacher" onchange="switchRole('teacher')">
+            <div class="role-tab-icon">📋</div>
+            <div class="role-tab-label">Teacher</div>
+            <div class="role-tab-sub">Monitor &amp; manage</div>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input class="form-control" type="text" id="username" name="username"
+                 placeholder="your_username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="department">Department</label>
+          <input class="form-control" type="text" id="department" name="department"
+                 placeholder="e.g. Computer Science">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-control" type="email" id="email" name="email"
+               placeholder="you@university.edu" required autocomplete="email">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input class="form-control" type="password" id="password" name="password"
+                 placeholder="min. 6 characters" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirm_password">Confirm Password</label>
+          <input class="form-control" type="password" id="confirm_password"
+                 name="confirm_password" placeholder="repeat password" required>
+        </div>
+      </div>
+
+      <!-- Teacher code field (hidden by default) -->
+      <div class="form-group" id="teacher-code-group" style="display:none;">
+        <label class="form-label" for="teacher_code">Teacher Access Code</label>
+        <input class="form-control" type="password" id="teacher_code" name="teacher_code"
+               placeholder="Enter teacher code">
+        <div class="form-hint">Contact your institution admin for the access code.</div>
+      </div>
+
+      <button type="submit" class="btn btn-gradient btn-full" style="margin-top:8px;">
+        Create Account →
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchRole(role) {
+  document.getElementById('tab-student').classList.toggle('selected', role === 'student');
+  document.getElementById('tab-teacher').classList.toggle('selected', role === 'teacher');
+  document.getElementById('teacher-code-group').style.display = role === 'teacher' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

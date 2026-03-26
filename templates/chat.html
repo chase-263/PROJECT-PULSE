@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Chat — {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:24px;padding-bottom:24px;">
+
+  <div class="breadcrumb" style="margin-bottom:16px;">
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <span>›</span>
+    <a href="{{ url_for('group_detail', group_id=group.id) }}">{{ group.name }}</a>
+    <span>›</span> Chat
+  </div>
+
+  <div class="chat-layout">
+
+    <!-- Sidebar -->
+    <div class="chat-sidebar">
+      <div class="sidebar-title">Chat Rooms</div>
+
+      <a href="{{ url_for('chat', group_id=group.id, room='general') }}" style="text-decoration:none;">
+        <button class="chat-room-btn {% if room == 'general' %}active{% endif %}">
+          💬 General
+        </button>
+      </a>
+
+      {% if is_leader %}
+        <a href="{{ url_for('chat', group_id=group.id, room='leaders') }}" style="text-decoration:none;">
+          <button class="chat-room-btn {% if room == 'leaders' %}active{% endif %}">
+            👑 Leaders Only
+          </button>
+        </a>
+      {% endif %}
+
+      <hr class="divider" style="margin:16px 0;">
+
+      <div class="sidebar-title">Members</div>
+      {% for member in group.members %}
+        <div class="member-item">
+          <div class="avatar {% if group.leader_id == member.id %}gold{% endif %}"
+               style="width:28px;height:28px;font-size:.68rem;">
+            {{ member.username[0].upper() }}
+          </div>
+          <div style="font-size:.82rem;color:var(--text2);">
+            {{ member.username }}
+            {% if member.id == user.id %}
+              <span style="color:var(--text3);"> (you)</span>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+
+      <hr class="divider" style="margin:16px 0;">
+
+      <a href="{{ url_for('group_detail', group_id=group.id) }}" class="btn btn-secondary btn-sm btn-full">
+        ← Back to Group
+      </a>
+    </div>
+
+    <!-- Main Chat -->
+    <div class="chat-main">
+
+      <!-- Header -->
+      <div class="chat-header">
+        <div>
+          <div style="font-weight:700;color:var(--text);">
+            {% if room == 'general' %}💬 General Chat{% else %}👑 Leaders Only{% endif %}
+          </div>
+          <div style="font-size:.78rem;color:var(--text3);">{{ group.name }}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <a href="{{ url_for('meeting', group_id=group.id) }}" class="btn btn-secondary btn-sm">🎥 Start Meeting</a>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" id="chat-messages">
+        {% if messages %}
+          {% for msg in messages %}
+            <div class="chat-message {% if msg.sender_id == user.id %}mine{% endif %}">
+              <div class="avatar {% if group.leader_id == msg.sender_id %}gold{% endif %}"
+                   style="width:30px;height:30px;font-size:.7rem;flex-shrink:0;align-self:flex-start;">
+                {{ msg.sender.username[0].upper() }}
+              </div>
+              <div>
+                <div class="chat-bubble">
+                  {% if msg.sender_id != user.id %}
+                    <div class="chat-sender">{{ msg.sender.username }}</div>
+                  {% endif %}
+                  {% if msg.content %}
+                    <div class="chat-text">{{ msg.content }}</div>
+                  {% endif %}
+                  {% if msg.file_url %}
+                    <a href="{{ url_for('static', filename=msg.file_url) }}"
+                       target="_blank" class="chat-file-link">
+                      📎 {{ msg.file_name or 'Attachment' }}
+                    </a>
+                  {% endif %}
+                  <div class="chat-time">{{ msg.created_at.strftime('%d %b · %H:%M') }}</div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div style="text-align:center;padding:40px 20px;color:var(--text3);">
+            <div style="font-size:2.5rem;margin-bottom:12px;">💬</div>
+            <div style="font-size:.9rem;">No messages yet. Say hello!</div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Input -->
+      <form method="POST" action="{{ url_for('send_message', group_id=group.id) }}"
+            enctype="multipart/form-data">
+        <input type="hidden" name="room" value="{{ room }}">
+        <div class="chat-input-area">
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+            <textarea class="chat-input" name="content" rows="1"
+                      placeholder="Type a message…"
+                      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.form.submit();}"></textarea>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <label style="cursor:pointer;font-size:.78rem;color:var(--text3);display:flex;align-items:center;gap:5px;">
+                <input type="file" name="file" style="display:none;"
+                       onchange="document.getElementById('fname').textContent=this.files[0]?.name||''">
+                📎 Attach file
+              </label>
+              <span id="fname" style="font-size:.75rem;color:var(--accent);"></span>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-gradient" style="align-self:flex-end;">Send →</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Auto scroll to bottom
+  const el = document.getElementById('chat-messages');
+  if (el) el.scrollTop = el.scrollHeight;
+</script>
+{% endblock %}

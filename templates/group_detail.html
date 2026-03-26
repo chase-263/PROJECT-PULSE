@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}{{ group.name }} — ProjectPulse{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+  <div class="breadcrumb" style="margin-bottom:20px;">
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <span>›</span> {{ group.name }}
+  </div>
+
+  <div class="page-header">
+    <div class="page-header-left">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+        <h1>{{ group.name }}</h1>
+        {% if group.department %}
+          <span class="badge badge-purple">{{ group.department }}</span>
+        {% endif %}
+        {% if group.leader and group.leader.id == user.id %}
+          <span class="badge badge-gold">👑 You are the Leader</span>
+        {% endif %}
+      </div>
+      <p>
+        Created by
+        {% if group.creator_id == user.id %}you{% else %}{{ group.creator.username }}{% endif %}
+        {% if group.leader %} · Leader: <strong style="color:var(--gold);">{{ group.leader.username }}</strong>{% endif %}
+      </p>
+    </div>
+    <div class="page-header-actions">
+      <a href="{{ url_for('chat', group_id=group.id) }}" class="btn btn-secondary">💬 Chat</a>
+      <a href="{{ url_for('meeting', group_id=group.id) }}" class="btn btn-secondary">🎥 Meeting</a>
+      <a href="{{ url_for('submit_project', group_id=group.id) }}" class="btn btn-secondary">📤 Submit</a>
+      {% if is_leader %}
+        <a href="{{ url_for('create_task', group_id=group.id) }}" class="btn btn-gradient">+ Add Task</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="group-layout">
+
+    <aside>
+      <div class="card card-sm">
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">Invite Code</div>
+          <div class="code-box">{{ group.code }}</div>
+          <div class="code-hint">Share with teammates</div>
+        </div>
+
+        <hr class="divider" style="margin:16px 0;">
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">Members ({{ group.members|length }})</div>
+          {% for member in group.members %}
+            <div class="member-item">
+              <div class="avatar {% if group.leader_id == member.id %}gold{% endif %}">
+                {{ member.username[0].upper() }}
+              </div>
+              <div>
+                <div class="member-name">
+                  {{ member.username }}
+                  {% if group.leader_id == member.id %}
+                    <span style="color:var(--gold);font-size:.7rem;"> 👑</span>
+                  {% endif %}
+                </div>
+                <div class="member-role">
+                  {% if member.id == group.creator_id %}owner
+                  {% elif group.leader_id == member.id %}leader
+                  {% else %}member{% endif %}
+                  {% if member.id == user.id %} · you{% endif %}
+                  {% if member.department %} · {{ member.department }}{% endif %}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <hr class="divider" style="margin:16px 0;">
+
+        <div class="sidebar-section" style="margin-bottom:0;">
+          <div class="sidebar-title">Meeting Link</div>
+          {% if group.meeting_link %}
+            <a href="{{ group.meeting_link }}" target="_blank"
+               class="btn btn-secondary btn-sm btn-full" style="margin-bottom:10px;">
+              🔗 Join Meeting
+            </a>
+          {% else %}
+            <div style="font-size:.8rem;color:var(--text3);margin-bottom:10px;">No meeting link set</div>
+          {% endif %}
+          {% if is_leader %}
+            <form method="POST" action="{{ url_for('set_meeting', group_id=group.id) }}">
+              <input class="form-control" type="url" name="meeting_link"
+                     placeholder="Paste Zoom / Meet link"
+                     value="{{ group.meeting_link or '' }}"
+                     style="font-size:.8rem;padding:8px 12px;margin-bottom:8px;">
+              <button type="submit" class="btn btn-primary btn-sm btn-full">Save Link</button>
+            </form>
+          {% endif %}
+        </div>
+
+      </div>
+    </aside>
+
+    <main>
+
+      <div class="stats-bar">
+        <div class="stat-pill">
+          <div class="stat-dot ns"></div>
+          <span>{{ status_counts['Not Started'] }} Not Started</span>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-dot ip"></div>
+          <span>{{ status_counts['In Progress'] }} In Progress</span>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-dot done"></div>
+          <span>{{ status_counts['Completed'] }} Completed</span>
+        </div>
+      </div>
+
+      {% set total = status_counts['Not Started'] + status_counts['In Progress'] + status_counts['Completed'] %}
+      {% set pct = ((status_counts['Completed'] / total * 100)|int) if total > 0 else 0 %}
+      <div style="margin-bottom:28px;">
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--text3);margin-bottom:8px;">
+          <span>Overall Progress</span>
+          <span style="color:var(--green);font-weight:600;">{{ pct }}% complete</span>
+        </div>
+        <div class="progress-bar-wrap" style="height:8px;">
+          <div class="progress-bar-fill" style="width:{{ pct }}%;"></div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <span class="section-title">Tasks</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="badge badge-gray">{{ tasks|length }} total</span>
+          {% if is_leader %}
+            <a href="{{ url_for('create_task', group_id=group.id) }}" class="btn btn-gradient btn-sm">+ Add Task</a>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if tasks %}
+        <div class="task-list">
+          {% for task in tasks %}
+            {% if task.status == 'Not Started' %}
+              {% set si = 'ns' %}
+            {% elif task.status == 'In Progress' %}
+              {% set si = 'ip' %}
+            {% else %}
+              {% set si = 'done' %}
+            {% endif %}
+            <div class="task-card">
+              <div class="task-bar {{ si }}"></div>
+              <div class="task-body">
+                <div class="task-title">{{ task.title }}</div>
+                {% if task.description %}
+                  <div class="task-desc">{{ task.description }}</div>
+                {% endif %}
+                <div class="task-meta">
+                  {% if task.status == 'Not Started' %}
+                    <span class="badge badge-gray">{{ task.status }}</span>
+                  {% elif task.status == 'In Progress' %}
+                    <span class="badge badge-blue">{{ task.status }}</span>
+                  {% else %}
+                    <span class="badge badge-green">{{ task.status }}</span>
+                  {% endif %}
+                  {% if task.assigned_user %}
+                    <span>👤 {{ task.assigned_user.username }}</span>
+                  {% else %}
+                    <span>👤 Unassigned</span>
+                  {% endif %}
+                  {% if task.deadline %}
+                    <span>📅 {{ task.deadline.strftime('%d %b %Y') }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="task-actions">
+                <form method="POST" action="{{ url_for('update_task_status', task_id=task.id) }}">
+                  <select name="status" class="status-select" onchange="this.form.submit()">
+                    <option value="Not Started" {% if task.status == 'Not Started' %}selected{% endif %}>Not Started</option>
+                    <option value="In Progress" {% if task.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Completed"   {% if task.status == 'Completed'   %}selected{% endif %}>Completed</option>
+                  </select>
+                </form>
+                {% if is_leader %}
+                  <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}"
+                        onsubmit="return confirm('Delete this task?');">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <h3>No tasks yet</h3>
+          <p>Add the first task to get this project moving.</p>
+          {% if is_leader %}
+            <a href="{{ url_for('create_task', group_id=group.id) }}" class="btn btn-gradient">+ Add First Task</a>
+          {% endif %}
+        </div>
+      {% endif %}
+
+    </main>
+  </div>
+</div>
+{% endblock %}

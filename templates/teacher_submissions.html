@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Submissions — ProjectPulse{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+
+  <div class="breadcrumb" style="margin-bottom:20px;">
+    <a href="{{ url_for('teacher_dashboard') }}">Teacher Dashboard</a>
+    <span>›</span> Submissions
+  </div>
+
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1>📤 Project Submissions</h1>
+      <p>Review all submitted projects, files and code</p>
+    </div>
+    <div class="page-header-actions">
+      <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">← Back</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" style="margin-bottom:36px;">
+    <div class="stat-card blue">
+      <div class="stat-card-num">{{ submissions|length }}</div>
+      <div class="stat-card-label">Total Submissions</div>
+    </div>
+    <div class="stat-card green">
+      {% set with_files = namespace(n=0) %}
+      {% for s in submissions %}{% if s.file_url %}{% set with_files.n = with_files.n + 1 %}{% endif %}{% endfor %}
+      <div class="stat-card-num">{{ with_files.n }}</div>
+      <div class="stat-card-label">With Files</div>
+    </div>
+    <div class="stat-card purple">
+      {% set with_code = namespace(n=0) %}
+      {% for s in submissions %}{% if s.code_text %}{% set with_code.n = with_code.n + 1 %}{% endif %}{% endfor %}
+      <div class="stat-card-num">{{ with_code.n }}</div>
+      <div class="stat-card-label">With Code</div>
+    </div>
+    <div class="stat-card gold">
+      {% set groups_submitted = namespace(ids=[]) %}
+      {% for s in submissions %}
+        {% if s.group_id not in groups_submitted.ids %}
+          {% set groups_submitted.ids = groups_submitted.ids + [s.group_id] %}
+        {% endif %}
+      {% endfor %}
+      <div class="stat-card-num">{{ groups_submitted.ids|length }}</div>
+      <div class="stat-card-label">Groups Submitted</div>
+    </div>
+  </div>
+
+  {% if submissions %}
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      {% for sub in submissions %}
+        <div class="card">
+
+          <!-- Submission Header -->
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;
+                      margin-bottom:16px;gap:16px;flex-wrap:wrap;">
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                <div style="font-size:1.1rem;font-weight:700;color:var(--text);">{{ sub.title }}</div>
+                {% if sub.file_url %}
+                  <span class="badge badge-blue">📎 File</span>
+                {% endif %}
+                {% if sub.code_text %}
+                  <span class="badge badge-purple">💻 Code</span>
+                {% endif %}
+              </div>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--text3);">
+                <span>👤 {{ sub.submitter.username }}</span>
+                <span>👥 {{ sub.group.name }}</span>
+                <span>📅 {{ sub.submitted_at.strftime('%d %b %Y · %H:%M') }}</span>
+              </div>
+            </div>
+            {% if sub.file_url %}
+              <a href="{{ url_for('static', filename=sub.file_url) }}"
+                 target="_blank" class="btn btn-primary btn-sm">
+                ⬇ Download File
+              </a>
+            {% endif %}
+          </div>
+
+          <!-- Description -->
+          {% if sub.description %}
+            <div style="background:var(--surface2);border:1px solid var(--border);
+                        border-radius:var(--radius);padding:14px;margin-bottom:16px;
+                        font-size:.88rem;color:var(--text2);">
+              {{ sub.description }}
+            </div>
+          {% endif %}
+
+          <!-- Code View -->
+          {% if sub.code_text %}
+            <div style="margin-bottom:8px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-family:var(--mono);font-size:.72rem;color:var(--text3);
+                            letter-spacing:.08em;text-transform:uppercase;">
+                  💻 Code Submission
+                </div>
+                <button onclick="toggleCode('code-{{ sub.id }}')"
+                        class="btn btn-ghost btn-sm" id="btn-{{ sub.id }}">
+                  Show Code
+                </button>
+              </div>
+              <div id="code-{{ sub.id }}" style="display:none;">
+                <div class="code-viewer">{{ sub.code_text }}</div>
+              </div>
+            </div>
+          {% endif %}
+
+          <!-- Participation Stats for this group -->
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--text3);
+                        letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;">
+              Group Task Stats
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              {% set total_tasks = sub.group.tasks|length %}
+              {% set done_tasks  = namespace(n=0) %}
+              {% set ip_tasks    = namespace(n=0) %}
+              {% for t in sub.group.tasks %}
+                {% if t.status == 'Completed' %}{% set done_tasks.n = done_tasks.n + 1 %}{% endif %}
+                {% if t.status == 'In Progress' %}{% set ip_tasks.n = ip_tasks.n + 1 %}{% endif %}
+              {% endfor %}
+              <span class="badge badge-gray">{{ total_tasks }} Total Tasks</span>
+              <span class="badge badge-green">{{ done_tasks.n }} Completed</span>
+              <span class="badge badge-blue">{{ ip_tasks.n }} In Progress</span>
+              <span class="badge badge-gray">{{ sub.group.members|length }} Members</span>
+            </div>
+
+            <!-- Per member contribution -->
+            {% if sub.group.tasks %}
+              <div style="margin-top:14px;">
+                <div style="font-family:var(--mono);font-size:.68rem;color:var(--text3);
+                            letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;">
+                  Member Contributions
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  {% for member in sub.group.members %}
+                    {% set member_done  = namespace(n=0) %}
+                    {% set member_total = namespace(n=0) %}
+                    {% for t in sub.group.tasks %}
+                      {% if t.assigned_to == member.id %}
+                        {% set member_total.n = member_total.n + 1 %}
+                        {% if t.status == 'Completed' %}
+                          {% set member_done.n = member_done.n + 1 %}
+                        {% endif %}
+                      {% endif %}
+                    {% endfor %}
+                    {% if member_total.n > 0 %}
+                      {% set mpct = ((member_done.n / member_total.n) * 100)|int %}
+                      <div style="display:flex;align-items:center;gap:10px;">
+                        <div class="avatar" style="width:26px;height:26px;font-size:.65rem;flex-shrink:0;">
+                          {{ member.username[0].upper() }}
+                        </div>
+                        <div style="font-size:.8rem;color:var(--text2);width:100px;flex-shrink:0;">
+                          {{ member.username }}
+                        </div>
+                        <div style="flex:1;">
+                          <div class="progress-bar-wrap" style="height:6px;">
+                            <div class="progress-bar-fill" style="width:{{ mpct }}%;"></div>
+                          </div>
+                        </div>
+                        <div style="font-size:.75rem;font-family:var(--mono);color:var(--text3);
+                                    width:80px;text-align:right;flex-shrink:0;">
+                          {{ member_done.n }}/{{ member_total.n }} · {{ mpct }}%
+                        </div>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📤</div>
+      <h3>No submissions yet</h3>
+      <p>Submitted projects will appear here once students submit their work.</p>
+    </div>
+  {% endif %}
+
+</div>
+
+<script>
+function toggleCode(id) {
+  const el  = document.getElementById(id);
+  const btn = document.getElementById('btn-' + id.replace('code-', ''));
+  const visible = el.style.display !== 'none';
+  el.style.display  = visible ? 'none' : 'block';
+  btn.textContent   = visible ? 'Show Code' : 'Hide Code';
+}
+</script>
+{% endblock %}

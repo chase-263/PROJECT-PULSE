@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ProjectPulse{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+{% if session.get('user_id') %}
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="{{ url_for('dashboard') if session.get('role') != 'teacher' else url_for('teacher_dashboard') }}" class="navbar-brand">
+      <div class="logo-icon">PP</div>
+      Project<span>Pulse</span>
+    </a>
+    <div class="navbar-nav">
+      <span class="navbar-user">{{ session.get('username', '') }}</span>
+      {% if session.get('role') == 'teacher' %}
+        <span class="navbar-role teacher">Teacher</span>
+        <a href="{{ url_for('teacher_dashboard') }}" class="nav-link">Dashboard</a>
+        <a href="{{ url_for('attendance') }}" class="nav-link">Attendance</a>
+        <a href="{{ url_for('teacher_submissions') }}" class="nav-link">Submissions</a>
+      {% else %}
+        <span class="navbar-role student">Student</span>
+        <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
+        <a href="{{ url_for('create_group') }}" class="nav-link">+ New Group</a>
+        <a href="{{ url_for('join_group') }}" class="nav-link">Join</a>
+      {% endif %}
+      <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+{% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+    <div class="flashes">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+</body>
+</html>
