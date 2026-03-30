@@ -494,3 +494,61 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; 
   h1           { font-size: 1.5rem; }
   .stats-row   { flex-direction: column; }
 }
+
+/* ── Mobile Responsive Fixes ── */
+@media (max-width: 768px) {
+  .container { padding: 0 14px; }
+  .page-wrap { padding: 20px 0 60px; }
+
+  .navbar-inner { padding: 0 14px; height: 54px; }
+  .navbar-brand { font-size: 1rem; }
+  .navbar-nav { gap: 2px; }
+  .nav-link { padding: 5px 8px; font-size: .78rem; }
+  .navbar-user { display: none; }
+  .navbar-role { display: none; }
+
+  .page-header { flex-direction: column; gap: 12px; margin-bottom: 20px; }
+  .page-header-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+  .page-header-actions .btn { flex: 1; min-width: 120px; font-size: .78rem; padding: 8px 10px; }
+
+  .groups-grid { grid-template-columns: 1fr; gap: 14px; }
+  .group-card { padding: 18px; }
+  .group-card-footer { flex-direction: column; gap: 8px; }
+  .group-card-footer .btn { width: 100%; justify-content: center; }
+
+  .stats-row { gap: 8px; }
+  .stat-card { padding: 14px 10px; min-width: 0; }
+  .stat-card-num { font-size: 1.5rem; }
+
+  .group-layout { grid-template-columns: 1fr; gap: 16px; }
+
+  .form-row { grid-template-columns: 1fr; }
+
+  .task-card { padding: 14px; flex-wrap: wrap; }
+  .task-actions { flex-direction: row; width: 100%; justify-content: flex-end; margin-top: 8px; }
+
+  .teacher-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .teacher-card { padding: 14px; }
+
+  .student-table { font-size: .78rem; }
+  .student-table th, .student-table td { padding: 8px; }
+
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.2rem; }
+
+  .auth-card { padding: 28px 20px; }
+
+  .stats-bar { gap: 6px; }
+  .stat-pill { font-size: .72rem; padding: 4px 10px; }
+
+  .code-box { font-size: .9rem; }
+
+  .btn { font-size: .82rem; }
+  .btn-sm { font-size: .75rem; padding: 5px 10px; }
+}
+
+@media (max-width: 480px) {
+  .navbar-nav .nav-link:not(:last-child):not(:nth-last-child(2)) { display: none; }
+  .teacher-grid { grid-template-columns: 1fr; }
+  .page-header-actions .btn { font-size: .75rem; padding: 7px 8px; }
+}
