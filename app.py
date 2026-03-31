@@ -111,7 +111,10 @@ def generate_group_code():
 
 def current_user():
     if 'user_id' in session:
-        return db.session.get(User, session['user_id'])
+        user = db.session.get(User, session['user_id'])
+        if user is None:
+            session.clear()
+        return user
     return None
 
 def allowed_file(filename):
@@ -205,6 +208,9 @@ def logout():
 @login_required
 def dashboard():
     user = current_user()
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
     if user.is_teacher():
         return redirect(url_for('teacher_dashboard'))
     return render_template('dashboard.html', user=user, groups=user.groups)
